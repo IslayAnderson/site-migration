@@ -1,0 +1,9 @@
+.venv/
+.idea/
+__pycache__/
+
+# URL lists and generated output
+*.txt
+*.csv
+*.conf
+.htaccess

@@ -1,0 +1,6 @@
+[submodule "url-spider"]
+	path = url-spider
+	url = git@github.com:IslayAnderson/url-spider.git
+[submodule "url-redirect"]
+	path = url-redirect
+	url = git@github.com:IslayAnderson/url-redirect.git
