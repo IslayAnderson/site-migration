@@ -34,11 +34,12 @@ Needs Firefox (default) or Chrome, like url-spider.
 
 This:
 
-1. crawls the live site and saves the URLs to `live.txt`,
-2. crawls the staging site and saves the URLs to `staging.txt`,
-3. matches each live URL to the most similar staging URL and writes the redirect file.
+1. crawls the live and staging sites at the same time, each in its own browser, and saves the URLs to `live.txt` and `staging.txt`,
+2. matches each live URL to the most similar staging URL and writes the redirect file.
 
-URLs that errored, timed out or returned 4xx/5xx are left out of the lists, so dead pages don't get redirects. Ctrl-C during a crawl stops that crawl, keeps what it found and moves on.
+Progress lines start with `[live]` or `[staging]` so you can tell the crawls apart.
+
+URLs that errored, timed out or returned 4xx/5xx are left out of the lists, so dead pages don't get redirects. Ctrl-C stops both crawls, keeps what they found and still writes the redirect file.
 
 To try different thresholds or formats without crawling again, use `--reuse`:
 

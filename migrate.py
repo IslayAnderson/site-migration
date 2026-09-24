@@ -11,7 +11,9 @@ Usage:
 
 import argparse
 import getpass
+import multiprocessing
 import os
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -56,14 +58,14 @@ def crawl_site(label, start_url, auth, args):
             spider.add_basic_auth(driver, *auth, hosts)
         return driver
 
-    print(f"\n== crawling {label}: {start_url}", file=sys.stderr)
+    print(f"crawling {start_url}", file=sys.stderr)
     results = []
     try:
         spider.crawl(new_driver, [start_url], hosts, max_pages=args.max_pages, delay=args.delay,
                      page_timeout=args.page_timeout, max_wait=args.wait, settle=args.settle,
                      same_host=not args.all_hosts, results=results)
     except KeyboardInterrupt:
-        print(f"\nstopped {label} crawl, keeping what was found so far", file=sys.stderr)
+        print("stopped, keeping what was found so far", file=sys.stderr)
     return results
 
 
@@ -75,6 +77,36 @@ def live_pages(results):
 def write_list(path, urls):
     with open(path, "w", encoding="utf-8") as f:
         f.writelines(u + "\n" for u in urls)
+
+
+class PrefixedStream:
+    """Put a label at the start of every line, so the two crawls' output can be told apart."""
+
+    def __init__(self, stream, prefix):
+        self.stream, self.prefix, self.at_line_start = stream, prefix, True
+
+    def write(self, text):
+        out = []
+        for part in text.splitlines(keepends=True):
+            if self.at_line_start:
+                out.append(self.prefix)
+            out.append(part)
+            self.at_line_start = part.endswith("\n")
+        self.stream.write("".join(out))
+        self.stream.flush()
+        return len(text)
+
+    def flush(self):
+        self.stream.flush()
+
+
+def crawl_to_file(label, start_url, auth, path, args):
+    """Runs in its own process: crawl one site and save the pages that loaded to `path`."""
+    sys.stderr = PrefixedStream(sys.__stderr__, f"[{label}] ")
+    results = crawl_site(label, start_url, auth, args)
+    urls = live_pages(results)
+    write_list(path, urls)
+    print(f"{len(urls)} of {len(results)} URLs saved to {path}", file=sys.stderr)
 
 
 def main():
@@ -112,12 +144,21 @@ def main():
         live_auth = parse_auth(args.live_auth, "Live")
         staging_auth = parse_auth(args.staging_auth, "Staging")
 
-        for label, url, auth, path in (("live", args.live, live_auth, args.live_list),
-                                       ("staging", args.staging, staging_auth, args.staging_list)):
-            results = crawl_site(label, url, auth, args)
-            urls = live_pages(results)
-            write_list(path, urls)
-            print(f"{len(urls)} of {len(results)} {label} URLs saved to {path}", file=sys.stderr)
+        # crawl both sites at once, each with its own browser
+        crawls = [
+            multiprocessing.Process(target=crawl_to_file, args=(label, url, auth, path, args))
+            for label, url, auth, path in (("live", args.live, live_auth, args.live_list),
+                                           ("staging", args.staging, staging_auth, args.staging_list))
+        ]
+        for p in crawls:
+            p.start()
+        # Ctrl-C reaches both crawls directly and they save what they found, so just wait for them
+        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        for p in crawls:
+            p.join()
+        signal.signal(signal.SIGINT, previous)
+        if any(p.exitcode for p in crawls):
+            sys.exit("A crawl failed, see the output above.")
 
     old_urls = url_redirects.read_urls(args.live_list)
     new_urls = url_redirects.read_urls(args.staging_list)
