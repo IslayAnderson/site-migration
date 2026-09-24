@@ -15,11 +15,14 @@ python3 -m venv .venv
 
 If you cloned without `--recurse-submodules`, the script fetches the submodules the first time it runs. Install the requirements after that, or run `git submodule update --init` yourself first.
 
-To pull the latest versions of both tools:
+Each submodule is pinned to a specific commit, so new commits to url-spider or url-redirect aren't picked up automatically. To move to the latest versions:
 
 ```bash
 git submodule update --remote
+git commit -am "Update submodules"
 ```
+
+After you pull changes to site-migration itself, run `git submodule update` to check out the commits it now points to.
 
 Needs Firefox (default) or Chrome, like url-spider.
 

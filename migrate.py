@@ -59,8 +59,9 @@ def crawl_site(label, start_url, auth, args):
     print(f"\n== crawling {label}: {start_url}", file=sys.stderr)
     results = []
     try:
-        spider.crawl(new_driver, [start_url], hosts, args.max_pages, args.delay,
-                     args.wait, args.settle, not args.all_hosts, results)
+        spider.crawl(new_driver, [start_url], hosts, max_pages=args.max_pages, delay=args.delay,
+                     page_timeout=args.page_timeout, max_wait=args.wait, settle=args.settle,
+                     same_host=not args.all_hosts, results=results)
     except KeyboardInterrupt:
         print(f"\nstopped {label} crawl, keeping what was found so far", file=sys.stderr)
     return results
