@@ -34,7 +34,7 @@ Needs Firefox (default) or Chrome, like url-spider.
 
 This:
 
-1. crawls the live and staging sites at the same time, each in its own browser, and saves the URLs to `live.txt` and `staging.txt`,
+1. crawls the live and staging sites at the same time, each with its own browsers, and saves the URLs to `live.txt` and `staging.txt`,
 2. matches each live URL to the most similar staging URL and writes the redirect file.
 
 Progress lines start with `[live]` or `[staging]` so you can tell the crawls apart.
@@ -63,6 +63,7 @@ To try different thresholds or formats without crawling again, use `--reuse`:
 | `--live-auth` | `$LIVE_AUTH` | basic auth for live, `user:pass` or `user` to be prompted |
 | `--staging-auth` | `$STAGING_AUTH` | basic auth for staging, `user:pass` or `user` to be prompted |
 | `-m`, `--max-pages` | `500` | max pages per site |
+| `--workers` | `4` | browsers per site; both sites crawl at once, so twice this many run in total |
 | `-w`, `--wait` | `10` | max seconds to wait for a page to render |
 | `-p`, `--page-timeout` | `30` | max seconds for a page to load |
 | `-s`, `--settle` | `1.5` | seconds links must stay unchanged before moving on |

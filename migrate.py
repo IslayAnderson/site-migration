@@ -59,14 +59,15 @@ def crawl_site(label, start_url, auth, args):
         return driver
 
     print(f"crawling {start_url}", file=sys.stderr)
-    results = []
+    crawler = spider.Crawler(new_driver, [start_url], hosts, max_pages=args.max_pages, delay=args.delay,
+                             page_timeout=args.page_timeout, max_wait=args.wait, settle=args.settle,
+                             same_host=not args.all_hosts)
     try:
-        spider.crawl(new_driver, [start_url], hosts, max_pages=args.max_pages, delay=args.delay,
-                     page_timeout=args.page_timeout, max_wait=args.wait, settle=args.settle,
-                     same_host=not args.all_hosts, results=results)
+        crawler.run(max(1, args.workers))
     except KeyboardInterrupt:
         print("stopped, keeping what was found so far", file=sys.stderr)
-    return results
+    with crawler.cond:
+        return list(crawler.results)
 
 
 def live_pages(results):
@@ -131,6 +132,7 @@ def main():
     crawl.add_argument("--staging-auth", metavar="USER[:PASS]", default=os.environ.get("STAGING_AUTH"),
                        help="HTTP basic auth for the staging site; prompts for the password if omitted. Also read from $STAGING_AUTH")
     crawl.add_argument("-m", "--max-pages", type=int, default=500, help="max pages per site (default: 500)")
+    crawl.add_argument("--workers", type=int, default=4, help="browsers per site (default: 4, so 8 in total)")
     crawl.add_argument("-d", "--delay", type=float, default=0, help="extra seconds between pages (default: 0)")
     crawl.add_argument("-w", "--wait", type=float, default=10, help="max seconds to wait for a page to render (default: 10)")
     crawl.add_argument("-p", "--page-timeout", type=float, default=30, help="max seconds for a page to load (default: 30)")
