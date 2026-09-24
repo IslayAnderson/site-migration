@@ -120,6 +120,7 @@ def main():
     out.add_argument("-t", "--threshold", type=float, default=0.4, help="minimum score to accept a match (0-1, default 0.4)")
     out.add_argument("--include-low", action="store_true", help="include best-guess matches below the threshold")
     out.add_argument("--fallback", help="htaccess/nginx: redirect below-threshold URLs here instead (e.g. / )")
+    out.add_argument("-j", "--jobs", type=int, help="processes to match URLs with (default: one per CPU core)")
     out.add_argument("--live-list", default="live.txt", help="where to save the live crawl (default: live.txt)")
     out.add_argument("--staging-list", default="staging.txt", help="where to save the staging crawl (default: staging.txt)")
     out.add_argument("--reuse", action="store_true", help="skip crawling and reuse the saved --live-list / --staging-list")
@@ -167,7 +168,7 @@ def main():
     if not new_urls:
         sys.exit("No staging URLs found.")
 
-    results = url_redirects.build_redirects(old_urls, new_urls, args.threshold)
+    results = url_redirects.build_redirects(old_urls, new_urls, args.threshold, args.jobs)
 
     fh = open(args.output, "w", newline="", encoding="utf-8") if args.output else sys.stdout
     try:

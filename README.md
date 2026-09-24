@@ -56,6 +56,7 @@ To try different thresholds or formats without crawling again, use `--reuse`:
 | `-t`, `--threshold` | `0.4` | minimum similarity score (0–1) to accept a match |
 | `--include-low` | off | include the best guess for URLs below the threshold |
 | `--fallback PATH` | none | htaccess/nginx: redirect URLs below the threshold to `PATH` |
+| `-j`, `--jobs` | CPU cores | processes to match URLs with |
 | `--live-list` | `live.txt` | where to save the live crawl |
 | `--staging-list` | `staging.txt` | where to save the staging crawl |
 | `--reuse` | off | skip crawling and use the saved lists |
