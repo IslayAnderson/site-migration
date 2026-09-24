@@ -13,7 +13,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r url-spider/requirements.txt
 ```
 
-If you cloned without `--recurse-submodules`, the script fetches the submodules the first time it runs. Install the requirements after that, or run `git submodule update --init` yourself first.
+If you cloned without `--recurse-submodules`, the script fetches the submodules the first time it runs, retrying a few times if the connection drops. Install the requirements after that, or run `git submodule update --init` yourself first.
 
 Each submodule is pinned to a specific commit, so new commits to url-spider or url-redirect aren't picked up automatically. To move to the latest versions:
 

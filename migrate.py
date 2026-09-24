@@ -16,6 +16,7 @@ import os
 import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -25,12 +26,28 @@ REDIRECT_DIR = HERE / "url-redirect"
 sys.path[:0] = [str(SPIDER_DIR), str(REDIRECT_DIR)]
 
 # fetch the submodules on first run if the repo was cloned without --recurse-submodules
-if not (SPIDER_DIR / "spider.py").exists() or not (REDIRECT_DIR / "url_redirects.py").exists():
+SUBMODULES = {"url-spider": SPIDER_DIR / "spider.py", "url-redirect": REDIRECT_DIR / "url_redirects.py"}
+
+
+def missing_submodules():
+    return [name for name, f in SUBMODULES.items() if not f.exists()]
+
+
+if missing_submodules():
     print("Fetching url-spider and url-redirect submodules...", file=sys.stderr)
-    try:
-        subprocess.run(["git", "submodule", "update", "--init"], cwd=HERE, check=True)
-    except (OSError, subprocess.CalledProcessError) as e:
-        sys.exit(f"Couldn't fetch the submodules ({e}). Run `git submodule update --init` in {HERE}.")
+    # flaky connections often fail the fetch once, so try a few times before giving up
+    for attempt in range(1, 5):
+        # --force checks out submodules that an interrupted fetch left registered but empty
+        try:
+            subprocess.run(["git", "submodule", "update", "--init", "--force", "--", *missing_submodules()], cwd=HERE)
+        except OSError as e:
+            sys.exit(f"Couldn't run git ({e}).")
+        if not missing_submodules():
+            break
+        if attempt == 4:
+            sys.exit(f"Couldn't fetch the submodules. Run `git submodule update --init --force` in {HERE}.")
+        print(f"Fetch failed, retrying in {2 ** attempt}s...", file=sys.stderr)
+        time.sleep(2 ** attempt)
 
 try:
     import spider
@@ -162,6 +179,10 @@ def main():
         signal.signal(signal.SIGINT, previous)
         if any(p.exitcode for p in crawls):
             sys.exit("A crawl failed, see the output above.")
+
+    for path in (args.live_list, args.staging_list):
+        if not os.path.exists(path):
+            sys.exit(f"{path} not found. Run without --reuse to crawl first, or point --live-list / --staging-list at your lists.")
 
     old_urls = url_redirects.read_urls(args.live_list)
     new_urls = url_redirects.read_urls(args.staging_list)
